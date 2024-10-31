@@ -1,1 +1,1 @@
-std_msgs/Float32MultiArray raw
+int16[] data

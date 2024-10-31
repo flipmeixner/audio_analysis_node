@@ -4,6 +4,7 @@ from audio_common_msgs.msg import AudioData
 import numpy as np
 from collections import deque
 import threading
+import time
 
 from audio_processing.utils import feature_extraction
 from std_msgs.msg import Float32MultiArray
@@ -46,13 +47,18 @@ class AudioProcessor:
                 self.window_size = int(self.sr * self.window_duration)
                 self.step_size = int(self.window_size * (1 - self.overlap))
                 self.initialized = True
-            self.raw_pub.publish(audio_chunk)
+            # Create msg
+            raw_msg = AudioRaw()
+            raw_msg.data = audio_chunk.tolist() # Convert numpy array to list
+            self.raw_pub.publish(raw_msg)
             rospy.loginfo("Published a chunk of audio")
             self.buffer.extend(audio_chunk)
             self.process_buffer()
 
     def process_buffer(self):
+        rospy.loginfo(f"Checking buffer for window processing --> buffer length is {len(self.buffer)}")
         while len(self.buffer) >= self.window_size:
+            rospy.loginfo("Buffer full, processing window")
             # Extract window
             window = [self.buffer.popleft() for _ in range(self.window_size)]
             # Process window in a separate thread to avoid blocking
@@ -66,10 +72,13 @@ class AudioProcessor:
 
     def process_window(self, audio_data):
         # Feature extraction
-        features = feature_extraction(audio_data, self.sr)
+        start_time = time.time()
+        features = feature_extraction(audio_data)
+        rospy.loginfo(f"Feature extraction took {time.time() - start_time:.2f} seconds")
         # Create a ROS publisher
         features_msg = AudioFeatures()
-        features_msg = Float32MultiArray(data=features.flatten())
+        features_msg.features = Float32MultiArray()
+        features_msg.features.data = features.tolist()
 
         self.feature_pub.publish(features_msg)
 

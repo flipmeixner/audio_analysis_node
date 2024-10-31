@@ -1,51 +1,84 @@
 import streamlit as st
+import rospy
+from audio_analysis_node.msg import AudioFeatures, Prediction, AudioRaw
 import numpy as np
 import matplotlib.pyplot as plt
-import rospy
+from threading import Thread
+import time
 
-from audio_processing.msg import AudioFeatures, Prediction, AudioRaw
+# Initialize ROS node for subscribers
+rospy.init_node('streamlit_audio_analysis', anonymous=True)
 
+# Shared data storage for real-time updates
+audio_data = None
+feature_data = None
+prediction = None
 
-class AudioStreamlit:
-    def __init__(self):
-        rospy.init_node('streamlit_ node')
+# Callback functions for ROS subscribers
+def audio_callback(msg):
+    global audio_data
+    audio_data = np.frombuffer(msg.data, dtype=np.int16)
 
-        self.raw_sub = rospy.Subscriber('/audio_raw', AudioRaw, self.callback_raw)
-        self.feature_sub = rospy.Subscriber('/audio_features', AudioFeatures, self.callback_feature)
-        self.prediction_sub = rospy.Subscriber('/predictions', self.callback_pred)
+def feature_callback(msg):
+    global feature_data
+    feature_data = np.array(msg.data)
 
-    def callback_raw(self, raw):
+def prediction_callback(msg):
+    global prediction
+    prediction = msg.prediction
 
-# Assume 'raw_audio_data' is a 1D NumPy array representing the raw audio data
-raw_audio_data = np.random.rand(1000)  # Replace with actual data
+def feature_line_plot(st, features):
+    st.subheader("Processed Audio Features")    
+    fig, ax = plt.subplots()
+    ax.plot(features, color='green', linewidth=1.5)
+    ax.set_title("Processed Feature Pattern")
+    ax.set_xlabel("Feature Index")
+    ax.set_ylabel("Feature Value")
+    st.pyplot(fig)
 
-# Assume 'preprocessed_data' is a 2D NumPy array representing the preprocessed audio data (e.g., spectrogram)
-preprocessed_data = np.random.rand(10, 100)
+def raw_audio_waveform(st, audio_data):
+    fig, ax = plt.subplots()
+    ax.plot(audio_data, color='blue')
+    ax.set_title("Raw Audio Signal")
+    ax.set_xlabel("Samples")
+    ax.set_ylabel("Amplitude")
+    st.pyplot(fig)
 
-# Assume 'prediction_output' is a 1D NumPy array representing the output of your model
-prediction_output = np.random.rand(10)  # Replace with actual data
+def prediction_display(prediction):
+    prediction_text = "Abnormal" if prediction == 1 else "Normal"
+    prediction_display.write(f"Prediction: **{prediction_text}**")
 
-st.title("Audio Analysis App")
+# ROS Subscribers
+rospy.Subscriber('/audio_raw', AudioRaw, audio_callback)
+rospy.Subscriber('/audio_features', AudioFeatures, feature_callback)
+rospy.Subscriber('/predictions', Prediction, prediction_callback)
 
-# Module 1: Raw Audio Visualization
-col1, col2, _ = st.columns([3, 1, 1])
-with col1:
-    st.markdown("**Raw Audio Waveform**")
-    plt.plot(raw_audio_data)
-    st.pyplot(plt.gcf())
+# Streamlit app layout
+st.title("Real-Time Audio Analysis with ROS")
 
-# Module 2: Preprocessed Data Visualization
-with col2:
-    st.markdown("**Preprocessed Data (Spectrogram)**")
-    plt.imshow(preprocessed_data, cmap='hot', interpolation='nearest')
-    st.pyplot(plt.gcf())
+# Placeholders for real-time visualization
+raw_audio_plot = st.empty()
+feature_plot = st.empty()
+prediction_display = st.empty()
 
-# Module 3: Prediction Output Visualization
-with col3:
-    st.markdown("**Prediction Output**")
-    plt.bar(range(len(prediction_output)), prediction_output)
-    st.pyplot(plt.gcf())
+# Helper function to keep Streamlit in sync with ROS updates
+def update_visualizations():
+    while not rospy.is_shutdown():
+        # Update Raw Audio Visualization
+        if audio_data is not None:
+            raw_audio_waveform(st, audio_data)
 
+        # Update Feature Visualization
+        if feature_data is not None:
+            feature_line_plot(st, feature_data)
 
-def spin(self):
-    rospy.spin()
+        # Update Prediction Display
+        if prediction is not None:
+            prediction_display(prediction)
+
+        # Adjust the delay as necessary for your refresh rate
+        time.sleep(1)
+
+# Run the update function in a separate thread to keep Streamlit and ROS subscribers responsive
+if __name__ == '__main__':
+    Thread(target=update_visualizations, daemon=True).start()
