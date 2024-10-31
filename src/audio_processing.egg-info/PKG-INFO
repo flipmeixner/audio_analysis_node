@@ -1,0 +1,8 @@
+Metadata-Version: 2.1
+Name: audio_processing
+Version: 0.0.1
+Summary: Audio processing utilities for ROS
+Requires-Dist: numpy
+Requires-Dist: scikit-learn
+Requires-Dist: joblib
+Requires-Dist: pywavelets
