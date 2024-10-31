@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(audio_processing)
+project(audio_analysis_node)
 
 
 find_package(catkin REQUIRED COMPONENTS
@@ -10,13 +10,14 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_python_setup()
-set(PYTHON_EXECUTABLE "/home/flip/python_envs/rover_env/bin/python")
+# set(PYTHON_EXECUTABLE "/home/flip/python_envs/ros_env/bin/python")
 
 
 add_message_files(
   FILES
   AudioFeatures.msg
   Prediction.msg
+  AudioRaw.msg
 )
 
 generate_messages(

@@ -7,7 +7,7 @@ import threading
 
 from audio_processing.utils import feature_extraction
 from std_msgs.msg import Float32MultiArray
-from audio_processing.msg import AudioFeatures, AudioRaw
+from audio_analysis_node.msg import AudioFeatures, AudioRaw
 
 class AudioProcessor:
     def __init__(self, window_duration=10.0, overlap=0.5):

@@ -1,4 +1,4 @@
-#!/home/flip/python_envs/rover_env/bin/python
+#!/home/flip/python_envs/ros_env/bin/python
 
 import rospy
 from audio_processing.msg import AudioFeatures, Prediction

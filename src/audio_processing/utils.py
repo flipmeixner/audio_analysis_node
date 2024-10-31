@@ -1,4 +1,4 @@
-#!/home/flip/python_envs/rover_env/bin/python
+#!/home/flip/python_envs/ros_env/bin/python
 import numpy as np
 import pywt
 import librosa
